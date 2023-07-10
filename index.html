@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/6.0.0/bootbox.js" integrity="sha512-kwtW9vT4XIHyDa+WPb1m64Gpe1jCeLQLorYW1tzT5OL2l/5Q7N0hBib/UNH+HFVjWgGzEIfLJt0d8sZTNZYY6Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.js" integrity="sha512-uE2UhqPZkcKyOjeXjPCmYsW9Sudy5Vbv0XwAVnKBamQeasAVAmH6HR9j5Qpy6Itk1cxk+ypFRPeAZwNnEwNuzQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.8/beautify.js"></script>
   <link rel="stylesheet" type="text/css" href="style.css">
 
 </head>
@@ -17,8 +18,9 @@
         
         <div style="display: inline;">
           <button type="button" class="btn btn-success" style="display:inline-block;" onclick="displayPath.readJSON()">Load Path</button>
+          <button type="button" class="btn btn-danger" style="display:inline-block;" onclick="displayPath.exportJSON()">Export Path</button>
         </div>
-        <div style="width:20%; display:inline-block"></div>
+        <div style="width:10%; display:inline-block"></div>
         <div style="display: inline; position: fixed; justify-content: center;">
           <h1 style="text-align: center;font-family: Arial Rounded MT Bold,Helvetica Rounded,Arial,sans-serif;color: white;">Burt Path Builder</h1>
         </div>
@@ -67,13 +69,13 @@
           </div>
           <div class="row">
             <div class="col">
-              <input id="startX" class="form-control form-control-lg" type="number" placeholder="0" aria-label=".form-control-lg example">
+              <input id="startX" class="form-control form-control-lg" type="number" placeholder="0" value=0 aria-label=".form-control-lg example">
             </div>
             <div class="col">
-              <input id="startY" class="form-control form-control-lg" type="number" placeholder="0" aria-label=".form-control-lg example">
+              <input id="startY" class="form-control form-control-lg" type="number" placeholder="0" value=0 aria-label=".form-control-lg example">
             </div>
             <div class="col">
-              <input id="startRot" class="form-control form-control-lg" type="number" placeholder="0" aria-label=".form-control-lg example">
+              <input id="startRot" class="form-control form-control-lg" type="number" placeholder="0" value=0 aria-label=".form-control-lg example">
             </div>
           </div>
         </div>
