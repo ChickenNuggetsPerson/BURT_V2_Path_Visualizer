@@ -1,0 +1,43 @@
+.topBar {
+    padding: 10px;
+    background-color: rgb(74, 74, 74);
+}
+.bottomBar {
+    height: 100px;
+    background-color: rgb(74, 74, 74);
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+}
+
+.wrapper {
+    display: flex;
+    width: 100%;
+}
+
+#sidebar {
+    width: 200px;
+    height: 90vh;
+    top: 0;
+    left: 0;
+    background: rgb(22, 24, 27);
+    color: #fff;
+    padding: 10px;
+    z-index: 0;
+}
+#builder {
+    width: 60%;
+    background: rgb(29, 32, 37);
+    padding: 20px;
+    position: relative;
+}
+#display {
+    width: 40%;
+    padding: 20px;
+}
+
+
+
