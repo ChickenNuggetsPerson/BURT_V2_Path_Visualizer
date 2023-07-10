@@ -2,7 +2,7 @@ Array.prototype.insert = function ( index, ...items ) {
     this.splice( index, 0, ...items );
 };
 let fieldImage = document.createElement("img")
-fieldImage.src = "/field.png"
+fieldImage.src = "field.png"
 
 
 
@@ -95,7 +95,7 @@ class Path {
         this.movements = json.movements
         this.startPos = json.startPos
 
-        document.getElementById("pathName").innerText = this.name
+        document.getElementById("pathName").value = this.name
         document.getElementById("movementCount").innerText = this.movements.length
         document.getElementById("estTime").innerText = this.genEstTime()
 
@@ -145,7 +145,7 @@ class Path {
     }
     genJSON() {
         return JSON.stringify({
-            name: this.name,
+            name: document.getElementById("pathName").value,
             startPos: this.startPos,
             movements: this.movements
         })
