@@ -174,7 +174,7 @@ class Path {
 
         let currentPos = this.startPos
 
-        let lineWidth = 10;
+        let lineWidth = 5;
         let color = "cyan"
         this.movements.forEach(movement => {
             console.log(movement.type)
@@ -186,6 +186,8 @@ class Path {
             }
             if (movement.type == 1) {
                 // Drive Dist
+                this.drawLine(currentPos, this.pointFromDist(currentPos, movement.val), lineWidth, color)
+                currentPos = this.pointFromDist(currentPos, movement.val)
             }
             if (movement.type == 2) {
                 // Goto
@@ -201,6 +203,10 @@ class Path {
             }
             if (movement.type == 4) {
                 // Turn T0
+                this.drawLine(currentPos, this.pointFromDist(currentPos, 5), 5, "purple")
+                let newPos = currentPos;
+                newPos.rot = movement.val                    
+                currentPos = newPos
             }
             if (movement.type == 5) {
                 // Pickup
@@ -233,6 +239,22 @@ class Path {
             rot: tilePos.rot
         }
     };
+    pointFromDist(startPos, dist) {
+        let correctDist = (dist / 24)
+        let deg = this.degreeToRad(startPos.rot)
+        
+        let desiredX = startPos.x + correctDist * Math.cos(2.5*Math.PI - deg); 
+        let desiredY = startPos.y + correctDist * Math.sin(2.5*Math.PI - deg);
+    return createPos(desiredX, desiredY, startPos.rot);
+    }
+
+    degreeToRad(degree) {
+        return degree * ( Math.PI / 180 );
+      };
+    radToDegree(rad) {
+        return rad * ( 180 / Math.PI );
+      };
+      
 
 }
 let displayPath = new Path("test");
