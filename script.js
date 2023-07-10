@@ -2,7 +2,7 @@ Array.prototype.insert = function ( index, ...items ) {
     this.splice( index, 0, ...items );
 };
 let fieldImage = document.createElement("img")
-fieldImage.src = "/images/field.png"
+fieldImage.src = "/field.png"
 
 
 
