@@ -2,7 +2,7 @@ Array.prototype.insert = function ( index, ...items ) {
     this.splice( index, 0, ...items );
 };
 let fieldImage = document.createElement("img")
-fieldImage.src = "field.png"
+fieldImage.src = "https://chickennuggetsperson.github.io/BURT_V2_Path_Visualizer/field.png"
 
 
 
