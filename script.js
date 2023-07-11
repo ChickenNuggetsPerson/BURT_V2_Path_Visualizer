@@ -3,7 +3,7 @@ Array.prototype.insert = function ( index, ...items ) {
 };
 let fieldImage = document.createElement("img")
 fieldImage.src = "https://chickennuggetsperson.github.io/BURT_V2_Path_Visualizer/field.png"
-
+let fileName = "path.json"
 
 
 // Type of movements
@@ -50,6 +50,43 @@ let movementTypes = [
     },
 ]
 
+function copyToClipboard(elem) {
+    var target = elem;
+
+    // select the content
+    var currentFocus = document.activeElement;
+
+    target.focus();
+    target.setSelectionRange(0, target.value.length);
+
+    // copy the selection
+    var succeed;
+
+    try {
+      succeed = document.execCommand("copy");
+    } catch (e) {
+      console.warn(e);
+
+      succeed = false;
+    }
+
+    // Restore original focus
+    if (currentFocus && typeof currentFocus.focus === "function") {
+      currentFocus.focus();
+    }
+
+    if (succeed) {
+      $(".copied").animate({ top: -25, opacity: 0 }, 700, function() {
+        $(this).css({ top: 0, opacity: 1 });
+      });
+    }
+
+    return succeed;
+}
+
+$("#copyButton, #copyTarget").on("click", function() {
+    copyToClipboard(document.getElementById("copyTarget"));
+});
 
 
 function createMovement(type, val, pos, isTilePos, drivePath) {
@@ -87,13 +124,19 @@ class Path {
     load(json) {
 
         if (!json.name || !json.movements || !json.startPos) {
-            return false;
+            console.log("Missing Something")
+            //return false;
         }
 
         console.log("Loading Path")
         this.name = json.name;
         this.movements = json.movements
-        this.startPos = json.startPos
+        if (!json.startPos) {
+            this.startPos = createPos(0, 0, 0)
+        } else {
+            this.startPos = json.startPos
+        }
+        
 
         document.getElementById("pathName").value = this.name
         document.getElementById("movementCount").innerText = this.movements.length
@@ -122,7 +165,7 @@ class Path {
                 if (result != "") {
                     try {
                         if (!displayPath.load(JSON.parse(result))) {
-                            $.notify("Could Not Parse Input", "error");
+                            $.notify("Could Not Load Path", "error");
                         }
                     } catch(err) {
                         console.log(err)
@@ -133,15 +176,43 @@ class Path {
         });
     }
     exportJSON() {
-        bootbox.prompt({
+        let data = this.genJSON()
+        bootbox.dialog({
             size: 'medium',
             inputType: "text",
+            message: `<input id="exportText" class="form-control form-control-lg" type="text" placeholder="" value="" aria-label=".form-control-lg example">`,
             title: "Copy This JSON To File",
-            value: this.genJSON(),
-            callback: function(result) {
-                
-            }
+            value: data,
+            buttons: {
+                cancel: {
+                  label: "Download",
+                  className: "btn-success",
+                  callback: function(result) {
+                   
+                    // Create a temporary URL for the Blob
+                    const blob = new Blob([data], { type: 'application/json' });
+
+                    const url = URL.createObjectURL(blob);
+
+                    // Create a temporary <a> element to trigger the download
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = fileName;
+                    downloadLink.click();
+
+                    // Clean up the temporary URL
+                    URL.revokeObjectURL(url);
+                  }
+                },
+                confirm: {
+                  label: "Close",
+                  className: "btn-primary",
+                  callback: function(result) {}
+                }
+            },
+            callback: function(result) {}
         });
+        document.getElementById("exportText").value = data
     }
     genJSON() {
         return JSON.stringify({
@@ -172,6 +243,14 @@ class Path {
 
         this.ctx.drawImage(fieldImage, 0, 0, 480, 480)
 
+        let startPosRender = this.tilePosToPos(this.startPos)
+        this.ctx.strokeStyle = "magenta"
+        this.ctx.lineWidth = 5;
+        this.ctx.beginPath();
+        this.ctx.arc(startPosRender.x, startPosRender.y, 10, 0, 2 * Math.PI);
+        this.ctx.stroke();
+        this.drawLine(this.startPos, this.pointFromDist(this.startPos, 7), 5, "magenta")
+
         let currentPos = this.startPos
 
         let lineWidth = 5;
@@ -180,6 +259,12 @@ class Path {
             console.log(movement.type)
             if (movement.type == -1) {
                 // End
+                let startPosRender = this.tilePosToPos(currentPos)
+                this.ctx.strokeStyle = "lime"
+                this.ctx.lineWidth = 5;
+                this.ctx.beginPath();
+                this.ctx.arc(startPosRender.x, startPosRender.y, 10, 0, 2 * Math.PI);
+                this.ctx.stroke();
             }
             if (movement.type == 0) {
                 // Delay
@@ -561,6 +646,21 @@ function editConfig(id) {
     
 }
 
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    fileName = file.name;
+
+    reader.onload = function(event) {
+        const jsonContent = event.target.result;
+        const jsonData = JSON.parse(jsonContent);
+        console.log(jsonData); // Do something with the JSON data
+        displayPath.load(jsonData)
+    };
+
+    reader.readAsText(file);
+}
 
 
 fieldImage.onload = function() {
