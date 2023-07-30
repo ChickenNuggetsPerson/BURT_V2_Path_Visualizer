@@ -1,10 +1,53 @@
 Array.prototype.insert = function ( index, ...items ) {
     this.splice( index, 0, ...items );
 };
+function sleep(ms) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve('resolved');
+      }, ms);
+    });
+}
+function moveSquareTo(xPos, yPos, rotate, duration, linear) {
+    const canvas = document.getElementById("map");
+    
+    let botXSize = ( 480 / 6 ) * ( robotSizeWidth / 24 );
+    let botYSize = ( 480 / 6 ) * ( robotSizeLength / 24 );
+    
+    const square = document.querySelector(".square");
+    square.style.setProperty("width", `${botXSize}px`)
+    square.style.setProperty("height", `${botYSize}px`)
+
+    // Get the canvas position relative to the page
+    const canvasRect = canvas.getBoundingClientRect();
+
+    // Calculate the top-left coordinates based on the canvas position and center position
+    const x = canvasRect.x - ( botXSize / 2) + xPos
+    const y = canvasRect.y - ( botYSize / 2) + yPos
+
+    square.style.transition = `left ${duration}s, top ${duration}s, transform ${duration}s `;
+    if (linear) {
+        square.style.transitionTimingFunction = "linear"
+    } else {
+        square.style.transitionTimingFunction = "ease"
+    }
+    square.style.left = x + "px";
+    square.style.top = y + "px";
+    square.style.transform = `rotate(${rotate}deg)`;
+}
+
+
 let fieldImage = document.createElement("img")
 fieldImage.src = "https://chickennuggetsperson.github.io/BURT_V2_Path_Visualizer/field.png"
 let fileName = "path.json"
 
+
+let robotSizeWidth = 15;
+let robotSizeLength = 20;
+let turnTime = 0.75
+let tileSpeedPerSec = 1;
+
+let NANValue = -1
 
 // Type of movements
 let movementTypes = [
@@ -122,11 +165,11 @@ class Path {
         this.ctx = c.getContext("2d");
     }
     load(json) {
-
+        
         if (!json.name || !json.movements || !json.startPos) {
             console.log("Missing Something")
-            //return false;
         }
+        this.reset()
 
         console.log("Loading Path")
         this.name = json.name;
@@ -137,11 +180,6 @@ class Path {
             this.startPos = json.startPos
         }
         
-
-        document.getElementById("pathName").value = this.name
-        document.getElementById("movementCount").innerText = this.movements.length
-        document.getElementById("estTime").innerText = this.genEstTime()
-
         this.setStartPos()
 
         for (let i = 0; i < this.movements.length; i++) {
@@ -151,6 +189,10 @@ class Path {
         this.movements.forEach(movement => {
             addMovementToList(movement)
         })
+
+        document.getElementById("pathName").value = this.name
+        document.getElementById("movementCount").innerText = this.movements.length
+        document.getElementById("estTime").innerText = this.genEstTime()
 
         this.render()
         
@@ -221,11 +263,86 @@ class Path {
             movements: this.movements
         })
     }
-    genEstTime() {
-        // Do this
-        return 1;
+    reset() {
+        this.name = ""
+        this.movements = []
+        this.startPos = {
+            x: 0,
+            y: 0,
+            rot: 0
+        }
+        const sortableList = document.getElementById("builderList");
+        while (sortableList.firstChild) {
+            sortableList.removeChild(sortableList.firstChild);
+        }
+        configStorage = {}
+        this.render();
     }
+    genEstTime() {
+        let currentPos = this.startPos
 
+        let time = 0;
+
+        this.movements.forEach(movement => {
+            
+            if (movement.type == -1) {
+                // End
+            }
+            if (movement.type == 0) {
+                // Delay
+                time += movement.val;
+            }
+            if (movement.type == 1) {
+                // Drive Dist
+                let dist = movement.val / 24
+                time += (dist / tileSpeedPerSec)
+                currentPos = this.pointFromDist(currentPos, movement.val)
+            }
+            if (movement.type == 2) {
+                // Goto
+                let dist = this.distBetweenPoints(currentPos, movement.tilePosition)
+                console.log(dist)
+                time += (dist / tileSpeedPerSec)
+                if (movement.tilePosition.rot != NANValue) {
+                    time += turnTime
+                }
+                currentPos = movement.tilePosition
+            }
+            if (movement.type == 3) {
+                // Long Goto
+                movement.drivePath.forEach(move => {
+                    let dist = this.distBetweenPoints(currentPos, move)
+                    time += (dist / tileSpeedPerSec)
+                    if (move.rot != NANValue) {
+                        time += turnTime
+                    }
+                    currentPos = move
+                })
+            }
+            if (movement.type == 4) {
+                // Turn T0
+                time += turnTime
+                let newPos = currentPos;
+                newPos.rot = movement.val                    
+                currentPos = newPos
+            }
+            if (movement.type == 5) {
+                // Pickup
+            }
+            if (movement.type == 6) {
+                // Drop
+            }
+        })
+        
+        return Math.round(time * 100) / 100;
+    }
+    distBetweenPoints(pos1, pos2) {
+        let deltaX = Math.abs(pos2.x - pos1.x)
+        let deltaY = Math.abs(pos2.y - pos1.y)
+
+        return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2))
+
+    }
     setStartPos() {
         document.getElementById("startX").value = this.startPos.x
         document.getElementById("startY").value = this.startPos.y
@@ -237,26 +354,20 @@ class Path {
         this.startPos.rot = parseInt(document.getElementById("startRot").value) 
     }
     render() {
+        console.log("Rendering")
         this.updateStartPos()
         this.movements = getMovements()
         document.getElementById("movementCount").innerText = this.movements.length
+        document.getElementById("estTime").innerText = this.genEstTime() + "s"
 
         this.ctx.drawImage(fieldImage, 0, 0, 480, 480)
-
-        let startPosRender = this.tilePosToPos(this.startPos)
-        this.ctx.strokeStyle = "magenta"
-        this.ctx.lineWidth = 5;
-        this.ctx.beginPath();
-        this.ctx.arc(startPosRender.x, startPosRender.y, 10, 0, 2 * Math.PI);
-        this.ctx.stroke();
-        this.drawLine(this.startPos, this.pointFromDist(this.startPos, 7), 5, "magenta")
 
         let currentPos = this.startPos
 
         let lineWidth = 5;
-        let color = "cyan"
+        let color = "rgb(3, 248, 252)"
         this.movements.forEach(movement => {
-            console.log(movement.type)
+            
             if (movement.type == -1) {
                 // End
                 let startPosRender = this.tilePosToPos(currentPos)
@@ -271,24 +382,24 @@ class Path {
             }
             if (movement.type == 1) {
                 // Drive Dist
-                this.drawLine(currentPos, this.pointFromDist(currentPos, movement.val), lineWidth, color)
+                this.drawLine(currentPos, this.pointFromDist(currentPos, movement.val), lineWidth, color, false)
                 currentPos = this.pointFromDist(currentPos, movement.val)
             }
             if (movement.type == 2) {
                 // Goto
-                this.drawLine(currentPos, movement.tilePosition, lineWidth, color)
+                this.drawLine(currentPos, movement.tilePosition, lineWidth, color, false)
                 currentPos = movement.tilePosition
             }
             if (movement.type == 3) {
                 // Long Goto
                 movement.drivePath.forEach(move => {
-                    this.drawLine(currentPos, move, lineWidth, color)
+                    this.drawLine(currentPos, move, lineWidth, color, false)
                     currentPos = move
                 })
             }
             if (movement.type == 4) {
                 // Turn T0
-                this.drawLine(currentPos, this.pointFromDist(currentPos, 5), 5, "purple")
+                this.drawLine(currentPos, this.pointFromDist(currentPos, 5), 5, "purple", false)
                 let newPos = currentPos;
                 newPos.rot = movement.val                    
                 currentPos = newPos
@@ -299,24 +410,173 @@ class Path {
             if (movement.type == 6) {
                 // Drop
             }
-               
         })
 
+        let startPosRender = this.tilePosToPos(this.startPos)
+        this.ctx.strokeStyle = "magenta"
+        this.ctx.lineWidth = 5;
+        this.ctx.beginPath();
+        this.ctx.arc(startPosRender.x, startPosRender.y, 10, 0, 2 * Math.PI);
+        this.ctx.stroke();
+        this.drawLine(this.startPos, this.pointFromDist(this.startPos, 7), 5, "magenta")
+
+    }
+    
+
+
+    async playPath() {
+        document.getElementById("playPathBtn").disabled = true
+        this.render();
+        
+        let currentPos = this.startPos;
+        this.moveRobot(currentPos, 2);
+        await sleep(2500)
+
+        for (const movement of this.movements) {
+            let time = 0;
+            
+            if (movement.type == -1) {
+                // End
+            }
+            if (movement.type == 0) {
+                // Delay
+                time = movement.val;
+                await sleep(time * 1000)
+            }
+            if (movement.type == 1) {
+                // Drive Dist
+                let dist = movement.val / 24
+                time = (dist / tileSpeedPerSec)
+                currentPos = this.pointFromDist(currentPos, movement.val)
+                this.moveRobot(currentPos, time, false)
+                await sleep(time * 1000)
+            }
+            if (movement.type == 2) {
+                // Goto
+                let dist = this.distBetweenPoints(currentPos, movement.tilePosition)
+                time = (dist / tileSpeedPerSec)
+                this.moveRobot(createPos(movement.tilePosition.x, movement.tilePosition.y, currentPos.rot), time, false)
+                await sleep(time * 1000)
+                if (movement.tilePosition.rot != NANValue) {
+                    this.moveRobot(movement.tilePosition, time, true)
+                    await sleep(turnTime * 1000)
+                }
+                currentPos = movement.tilePosition
+            }
+            if (movement.type == 3) {
+                // Long Goto
+                for (const move of movement.drivePath) {
+                    let dist = this.distBetweenPoints(currentPos, move)
+                    time = (dist / tileSpeedPerSec)
+                    this.moveRobot(createPos(move.x, move.y, currentPos.rot), time, true)
+                    await sleep(time * 1000)
+                    if (move.rot != NANValue) {
+                        this.moveRobot(move, time, true)
+                        await sleep(turnTime * 1000)
+                    }
+                    currentPos = move
+                }
+            }
+            if (movement.type == 4) {
+                // Turn T0
+                time = turnTime
+                let newPos = currentPos;
+                newPos.rot = movement.val                    
+                currentPos = newPos
+                this.moveRobot(newPos, time, false)
+                await sleep(time * 1000)
+            }
+            if (movement.type == 5) {
+                // Pickup
+            }
+            if (movement.type == 6) {
+                // Drop
+            }
+
+            
+        }
+
+        await sleep(2500)
+        let randomPos = createPos(-50, -50, 999)
+        randomPos.x = ( Math.random() - 0.5 ) * randomPos.x
+        randomPos.y = ( Math.random() - 0.5 ) * randomPos.y
+        randomPos.rot = ( Math.random() - 0.5 ) * randomPos.rot
+        this.moveRobot(randomPos, 5, false)
+
+        document.getElementById("playPathBtn").disabled = false
+    }    
+
+    moveRobot(pos, time, linear) {
+        moveSquareTo(this.tilePosToPos(pos).x, this.tilePosToPos(pos).y, pos.rot, time, linear);
     }
 
-    drawLine(pos1, pos2, penWidth, color) {
+    drawLine(pos1, pos2, penWidth, color, canvasPos) {
         this.ctx.beginPath()
         this.ctx.lineWidth = penWidth
         this.ctx.strokeStyle = color;
 
-        let drawPos1 = this.tilePosToPos(pos1)
-        let drawPos2 = this.tilePosToPos(pos2)
+        let drawPos1 = pos1
+        let drawPos2 = pos2
 
+        if (!canvasPos) {
+            drawPos1 = this.tilePosToPos(pos1)
+            drawPos2 = this.tilePosToPos(pos2)
+        }
         this.ctx.moveTo(drawPos1.x, drawPos1.y)
         this.ctx.lineTo(drawPos2.x, drawPos2.y, 10)
 
         this.ctx.stroke()
     };
+    drawRectangle(pos, width, height, penWidth, color) {
+
+        width = width * 3
+        height = height * 3
+
+        pos = this.tilePosToPos(pos)
+
+        let rect = {
+            TL: createPos(0, 0, 0),
+            TR: createPos(0, 0, 0),
+            BL: createPos(0, 0, 0),
+            BR: createPos(0, 0, 0)
+        }
+
+        rect.TL = createPos(-(width / 2), (height / 2), 0);
+        rect.TR = createPos((width / 2), (height / 2), 0);
+        rect.BL = createPos(-(width / 2), -(height / 2), 0);
+        rect.BR = createPos((width / 2), -(height / 2), 0);
+
+        rect.TL = this.rotatePosAroundOrgin(rect.TL, pos.rot)
+        rect.TR = this.rotatePosAroundOrgin(rect.TR, pos.rot)
+        rect.BL = this.rotatePosAroundOrgin(rect.BL, pos.rot)
+        rect.BR = this.rotatePosAroundOrgin(rect.BR, pos.rot)
+
+        rect.TL = this.translatePos(rect.TL, pos.x, pos.y)
+        rect.TR = this.translatePos(rect.TR, pos.x, pos.y)
+        rect.BL = this.translatePos(rect.BL, pos.x, pos.y)
+        rect.BR = this.translatePos(rect.BR, pos.x, pos.y)
+
+        this.drawLine(rect.TL, rect.TR, penWidth, color, true);
+        this.drawLine(rect.TR, rect.BR, penWidth, color, true);
+        this.drawLine(rect.BR, rect.BL, penWidth, color, true);
+        this.drawLine(rect.BL, rect.TL, penWidth, color, true);
+
+    }
+    translatePos(pos, deltaX, deltaY) {
+        return createPos(pos.x + deltaX, pos.y + deltaY, pos.rot)
+    }
+    rotatePosAroundOrgin(pos, angle) {
+        // Convert angle from degrees to radians
+        const angleRadians = (angle * Math.PI) / 180;
+
+        // Calculate the new coordinates after rotation
+        const xNew = pos.x * Math.cos(angleRadians) - pos.y * Math.sin(angleRadians);
+        const yNew = pos.x * Math.sin(angleRadians) + pos.y * Math.cos(angleRadians);
+
+        // Return the new rotated point as an object
+        return createPos(xNew, yNew, pos.rot);
+    }
+
     tilePosToPos(tilePos) {
         return {
             x: (tilePos.x * 80) + (80 / 2),
@@ -424,6 +684,7 @@ let buildingList = new Sortable(document.getElementById("builderList"), {
     }
 });
 
+
 new Sortable(document.getElementById("trashList"), {
     group: 'shared',
     animation: 150,
@@ -524,7 +785,7 @@ function createConfig(id, config, configName) {
         configStorage[id] = {
             type: "posArray",
             name: configName,
-            value: [createPos(0, 0, 0)]
+            value: [createPos(0, 0, NANValue)]
         }
     }
 }
@@ -613,7 +874,14 @@ function editConfig(id) {
                 <span class="input-group-text" id="basic-addon3">Rotation</span>
             </div>
             <input type="number" class="form-control" name="rot" aria-describedby="basic-addon3" value=${config.value.rot}>
-        </div>`);
+        </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon3">Enter ${NANValue} for Null Rotation</span>
+            </div>
+            <h8>Null rotation means there will be no TurnTo at the end of the movement</h8>
+        </div>
+        `);
         bootbox.alert(form, function(){
             let newPos = {
                 x: JSON.parse(form.find('input[name=xPos]').val()),
@@ -627,6 +895,7 @@ function editConfig(id) {
     if (config.type == "posArray") {
         bootbox.prompt({
             title: "Enter Position Array",
+            message: `Enter a ${NANValue} rotation in the last movment if you don't want a TurnTo called`,
             inputType: 'textarea',
             value: js_beautify(JSON.stringify(config.value)),
             callback: function (result) {
