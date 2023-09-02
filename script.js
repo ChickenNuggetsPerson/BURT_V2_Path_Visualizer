@@ -90,7 +90,11 @@ let movementTypes = [
         name: "End",
         typeNum: -1,
         options: []
-    },
+    },{
+        name: "Reverse Drive",
+        typeNum: 7,
+        options: [{ type:"number", name:"Distance"}]
+    }
 ]
 
 function copyToClipboard(elem) {
@@ -260,6 +264,7 @@ class Path {
         return JSON.stringify({
             name: document.getElementById("pathName").value,
             startPos: this.startPos,
+            length: this.movements.length,
             movements: this.movements
         })
     }
@@ -409,6 +414,14 @@ class Path {
             }
             if (movement.type == 6) {
                 // Drop
+            }
+            if (movement.type == 7) {
+                // Reverse Drive
+                //let editedPos = currentPos
+                //editedPos.rot = editedPos.rot + 180
+                //this.drawLine(currentPos, this.pointFromDist(editedPos, movement.val), lineWidth, color, false)
+                //currentPos = this.pointFromDist(editedPos, movement.val)
+                //currentPos.rot = currentPos.rot + 180
             }
         })
 
@@ -901,7 +914,10 @@ function editConfig(id) {
             callback: function (result) {
                 try {
                     let newData = JSON.parse(result)
-                    changeConfig(id, newData)
+                    changeConfig(id, JSON.parse(result))
+                    console.log(newData);
+                    console.log(result)
+                    console.log(JSON.parse(result))
                 } catch(err) {
                     console.log(err)
                     $.notify("Could Not Parse Input", "error");
