@@ -60,6 +60,10 @@ let movementTypes = [
         name: "Drive Dist",
         typeNum: 1,
         options: [{ type:"number", name:"Distance"}]
+    },{
+        name: "Reverse Drive",
+        typeNum: 7,
+        options: [{ type:"number", name:"Distance"}]
     },
     {
         name: "Goto",
@@ -87,13 +91,17 @@ let movementTypes = [
         options: []
     },
     {
+        name: "Set Front Arm",
+        typeNum: 8,
+        options: [{ type:"number", name:"Angle"}]
+    },{
+        name: "Release Front Arm",
+        typeNum: 9,
+        options: []
+    },{
         name: "End",
         typeNum: -1,
         options: []
-    },{
-        name: "Reverse Drive",
-        typeNum: 7,
-        options: [{ type:"number", name:"Distance"}]
     }
 ]
 
@@ -417,10 +425,10 @@ class Path {
             }
             if (movement.type == 7) {
                 // Reverse Drive
-                //let editedPos = currentPos
-                //editedPos.rot = editedPos.rot + 180
-                //this.drawLine(currentPos, this.pointFromDist(editedPos, movement.val), lineWidth, color, false)
-                //currentPos = this.pointFromDist(editedPos, movement.val)
+                let editedPos = currentPos
+                editedPos.rot = editedPos.rot + 270
+                this.drawLine(currentPos, this.pointFromDist(editedPos, movement.val), lineWidth, color, false)
+                currentPos = this.pointFromDist(editedPos, movement.val)
                 //currentPos.rot = currentPos.rot + 180
             }
         })
