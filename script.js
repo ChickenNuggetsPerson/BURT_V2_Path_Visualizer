@@ -91,6 +91,11 @@ let movementTypes = [
         options: []
     },
     {
+        name: "Catapult Launch",
+        typeNum: 12,
+        options: [{ type:"number", name:"Launch Times"}]
+    },
+    {
         name: "Set Front Arm",
         typeNum: 8,
         options: [{ type:"number", name:"Angle"}]
