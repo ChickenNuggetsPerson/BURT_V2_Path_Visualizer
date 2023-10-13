@@ -99,6 +99,14 @@ let movementTypes = [
         typeNum: 9,
         options: []
     },{
+        name: "Open Wings",
+        typeNum: 10,
+        options: []
+    },{
+        name: "Close Wings",
+        typeNum: 11,
+        options: []
+    },{
         name: "End",
         typeNum: -1,
         options: []
