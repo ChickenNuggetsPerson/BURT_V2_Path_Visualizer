@@ -104,6 +104,10 @@ let movementTypes = [
         typeNum: 9,
         options: []
     },{
+        name: "Calibrate Front Arm",
+        typeNum: 13,
+        options: []
+    },{
         name: "Open Wings",
         typeNum: 10,
         options: []
